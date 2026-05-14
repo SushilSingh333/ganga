@@ -802,10 +802,12 @@ section{padding:120px 0;position:relative;overflow:hidden}
 .cm-arrow{
   width:32px;height:32px;border-radius:50%;
   display:grid;place-items:center;flex-shrink:0;
+  padding:0;font:inherit;cursor:pointer;
   background:rgba(245,239,230,.1);
   border:1px solid rgba(245,239,230,.18);color:var(--ivory);
   transition:background .4s, border-color .4s, transform .4s var(--ease);
 }
+.cm-arrow:hover{background:var(--saffron);border-color:var(--saffron);transform:rotate(-45deg)}
 .cm-arrow svg{width:14px;height:14px;transition:transform .4s var(--ease)}
 .chapter-media figure:hover .cm-arrow{
   background:var(--saffron);border-color:var(--saffron);transform:rotate(-45deg);
