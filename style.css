@@ -443,13 +443,17 @@ section{padding:120px 0;position:relative;overflow:hidden}
     /* Extra darkening at top (header) and bottom (foot) */
     linear-gradient(180deg, rgba(0,0,0,.45) 0%, transparent 25%, transparent 65%, rgba(0,0,0,.6) 100%);
 }
-@media (max-width:768px){
+@media (max-width:1024px){
   .hero-veil{
     background:
-      /* Stronger base darkening on mobile — the text takes most of the screen */
-      linear-gradient(180deg, rgba(6,30,22,.7) 0%, rgba(6,30,22,.7) 100%),
-      /* Bottom-weighted gradient covers the deck + CTAs + plaque area */
-      linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.15) 30%, rgba(0,0,0,.45) 55%, rgba(0,0,0,.8) 100%);
+      /* Heavy uniform dark base — guarantees the text always reads */
+      linear-gradient(180deg, rgba(6,20,16,.82) 0%, rgba(6,20,16,.82) 100%),
+      /* Top band so the header burger/logo separates from the image */
+      linear-gradient(180deg, rgba(0,0,0,.6) 0%, transparent 22%),
+      /* Middle anchoring for the description text */
+      linear-gradient(180deg, transparent 22%, rgba(0,0,0,.4) 45%, rgba(0,0,0,.6) 70%),
+      /* Strong bottom for the plaque + scroll cap */
+      linear-gradient(180deg, transparent 70%, rgba(0,0,0,.85) 100%) !important;
   }
 }
 .hero-noise{
