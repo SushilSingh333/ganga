@@ -390,6 +390,24 @@
     }
   });
 
+  /* ── Films / Inline YouTube Playback ────────────────────── */
+  $$('.film').forEach(card => {
+    const id = card.dataset.youtube;
+    if (!id) return;
+    card.addEventListener('click', () => {
+      if (card.classList.contains('is-playing')) return;
+      const params = 'autoplay=1&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3';
+      const iframe = document.createElement('iframe');
+      iframe.className = 'film-iframe';
+      iframe.src = `https://www.youtube.com/embed/${id}?${params}`;
+      iframe.title = 'Ganga County Film';
+      iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+      iframe.allowFullscreen = true;
+      card.appendChild(iframe);
+      card.classList.add('is-playing');
+    });
+  });
+
   /* ── Amenities Showcase ─────────────────────────────────── */
   const atTiles = $$('.at');
   const afImgs = $$('.af-img');
