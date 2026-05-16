@@ -238,10 +238,13 @@ section{padding:120px 0;position:relative;overflow:hidden}
 .cur{
   position:fixed;top:0;left:0;width:14px;height:14px;border-radius:50%;
   border:1px solid var(--saffron);background:transparent;pointer-events:none;
-  z-index:9000;transform:translate(-50%,-50%);
-  transition: width .35s var(--ease), height .35s var(--ease), background .25s, border-color .25s;
+  z-index:9000;
+  opacity:0;
+  transition:opacity .25s var(--ease), width .35s var(--ease), height .35s var(--ease), background .25s, border-color .25s;
   mix-blend-mode:difference;
+  will-change:transform, opacity;
 }
+.cur.is-on{opacity:1}
 .cur::after{
   content:"";position:absolute;inset:50%;width:3px;height:3px;
   background:var(--saffron);border-radius:50%;transform:translate(-50%,-50%);
@@ -255,7 +258,7 @@ section{padding:120px 0;position:relative;overflow:hidden}
   position:absolute;inset:0;display:grid;place-items:center;opacity:0;transition:opacity .25s;
 }
 .cur.is-img .cur-label{opacity:1}
-@media (hover:none){.cur{display:none}}
+@media (hover:none), (pointer:coarse), (max-width:1024px){.cur{display:none!important}}
 
 /* ─── Header ─────────────────────────────────────────────── */
 .hdr{
@@ -411,6 +414,12 @@ section{padding:120px 0;position:relative;overflow:hidden}
   transform:translate(-50%,-50%) scale(1.35);
   border:0;pointer-events:none;
 }
+.hero-poster{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;
+  display:block;z-index:2;
+  transition:opacity .8s ease;
+}
+.hero-video.is-playing .hero-poster{opacity:0;pointer-events:none}
 /* Mask the iframe's top/bottom edges so YouTube's title flash & end-card thumbnails never appear */
 .hero-video::before,
 .hero-video::after{
@@ -1519,11 +1528,38 @@ section{padding:120px 0;position:relative;overflow:hidden}
 }
 
 @media (max-width:960px){
-  .films{padding:90px 0}
-  .films-grid{grid-template-columns:1fr;gap:18px}
-  .film-short{grid-column:auto;grid-row:auto;aspect-ratio:9/14;max-width:380px;margin:0 auto}
-  .film-overlay{padding:20px}
-  .film-cap p{font-size:13px}
+  .films{padding:64px 0 56px}
+  .films .section-head{margin-bottom:28px;padding:0 var(--pad)}
+  .films-grid{grid-template-columns:1fr;gap:14px;padding:0 var(--pad)}
+  .film{aspect-ratio:16/10;border-radius:8px}
+  .film-short{
+    grid-column:auto;grid-row:auto;
+    aspect-ratio:9/13;
+    max-width:300px;margin:6px auto 0;
+  }
+  .film-overlay{padding:16px}
+  .film-corner{width:14px;height:14px}
+  .film-corner.tl,.film-corner.tr{top:10px}
+  .film-corner.bl,.film-corner.br{bottom:10px}
+  .film-corner.tl,.film-corner.bl{left:10px}
+  .film-corner.tr,.film-corner.br{right:10px}
+  .film-play{width:54px;height:54px}
+  .film-short .film-play{width:60px;height:60px}
+  .film-play svg{width:22px;height:22px;margin-left:3px}
+  .film-short .film-play svg{width:24px;height:24px;margin-left:4px}
+  .film-play-ring-2{display:none} /* one ring is plenty on mobile */
+  .film-cap{max-width:100%}
+  .film-cap .film-tag{font-size:9.5px;letter-spacing:.24em;padding:4px 9px;margin-bottom:7px}
+  .film-cap h3{font-size:18px}
+  .film-cap p{font-size:12px;line-height:1.5;max-width:none}
+  .film-short .film-cap p{display:none} /* keep the short caption minimal */
+}
+
+@media (max-width:480px){
+  .films{padding:52px 0 44px}
+  .film-cap h3{font-size:16px}
+  .film-cap p{font-size:11.5px}
+  .film-short{max-width:260px}
 }
 
 /* ─── TESTIMONIAL ────────────────────────────────────────── */

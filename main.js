@@ -35,21 +35,63 @@
       preloader.classList.add('is-out');
       document.body.classList.add('is-anim');
     }, reduceMotion ? 200 : 2700);
+
+    // Conditionally load YouTube iframe on desktop only — saves significant bandwidth on mobile
+    const heroVid = $('.hero-video[data-yt]');
+    if (heroVid && window.innerWidth >= 900 && !reduceMotion) {
+      const id = heroVid.dataset.yt;
+      const start = heroVid.dataset.start || '0';
+      const params = `autoplay=1&mute=1&loop=1&playlist=${id}&start=${start}&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1&disablekb=1&fs=0&cc_load_policy=0`;
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube.com/embed/${id}?${params}`;
+      iframe.title = 'Ganga County · Estate Film';
+      iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+      iframe.allowFullscreen = true;
+      iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+      iframe.tabIndex = -1;
+      iframe.setAttribute('aria-hidden', 'true');
+      iframe.addEventListener('load', () => {
+        // Keep the poster on top until autoplay has reliably kicked in
+        setTimeout(() => heroVid.classList.add('is-playing'), 2200);
+      });
+      heroVid.appendChild(iframe);
+    }
   });
 
   /* ── Custom Cursor ──────────────────────────────────────── */
   const cur = $('#cur');
   const curLabel = $('.cur-label', cur);
-  if (matchMedia('(hover:hover)').matches) {
+  const isFinePointer = matchMedia('(hover:hover) and (pointer:fine)').matches;
+  const isWideEnough = window.innerWidth > 1024;
+  if (isFinePointer && isWideEnough) {
     let tx = 0, ty = 0, cx = 0, cy = 0;
-    document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
+    let hasMoved = false;
+    let raf;
+
+    const start = (e) => {
+      tx = cx = e.clientX;
+      ty = cy = e.clientY;
+      if (!hasMoved) {
+        hasMoved = true;
+        cur.classList.add('is-on');
+        if (!raf) raf = requestAnimationFrame(tick);
+      }
+    };
+
+    document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; }, { passive: true });
+    document.addEventListener('mouseenter', start, { passive: true });
+    document.addEventListener('mouseover', start, { passive: true, once: true });
+
+    // Hide cursor when pointer leaves the document
+    document.addEventListener('mouseleave', () => cur.classList.remove('is-on'));
+    document.addEventListener('mouseenter', () => cur.classList.add('is-on'));
+
     const tick = () => {
       cx += (tx - cx) * 0.22;
       cy += (ty - cy) * 0.22;
-      cur.style.transform = `translate(${cx}px, ${cy}px) translate(-50%, -50%)`;
-      requestAnimationFrame(tick);
+      cur.style.transform = `translate3d(${cx}px, ${cy}px, 0) translate(-50%, -50%)`;
+      raf = requestAnimationFrame(tick);
     };
-    requestAnimationFrame(tick);
 
     const hoverSel = 'a, button, input, select, textarea, [data-magnet], .plot-card, .amen-card, .why-row, .press-card';
     document.addEventListener('mouseover', e => {
@@ -66,10 +108,12 @@
       if (e.target.closest('[data-cursor]')) cur.classList.remove('is-img');
       if (e.target.closest(hoverSel)) cur.classList.remove('is-hover');
     });
+  } else if (cur) {
+    cur.remove();
   }
 
   /* ── Magnetic Buttons ───────────────────────────────────── */
-  if (matchMedia('(hover:hover)').matches && !reduceMotion) {
+  if (isFinePointer && isWideEnough && !reduceMotion) {
     $$('[data-magnet]').forEach(el => {
       let raf;
       el.addEventListener('mousemove', e => {
