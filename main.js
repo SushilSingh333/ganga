@@ -37,11 +37,12 @@
     }, reduceMotion ? 200 : 2700);
 
     // Hero video — load YouTube iframe on desktop only, via the official IFrame API.
-    // Poster stays on top (z-index:2) until YT confirms PLAYING; ENDED → seekTo(start) for loop.
+    // Poster stays on top (z-index:2) until YT confirms PLAYING; loops within [start..end] window.
     const heroVid = $('.hero-video[data-yt]');
     if (heroVid && window.innerWidth >= 900 && !reduceMotion) {
       const id = heroVid.dataset.yt;
       const startAt = parseInt(heroVid.dataset.start || '0', 10);
+      const endAt = parseFloat(heroVid.dataset.end || '0') || Infinity;
 
       // Anchor element the API will replace with an iframe
       const anchorId = 'hero-yt-anchor';
@@ -49,6 +50,20 @@
       anchor.id = anchorId;
       anchor.className = 'hero-yt-anchor';
       heroVid.appendChild(anchor);
+
+      let loopTimer = null;
+      const startLoopWatcher = (player) => {
+        if (loopTimer) return;
+        loopTimer = setInterval(() => {
+          try {
+            const t = player.getCurrentTime();
+            if (t >= endAt) {
+              player.seekTo(startAt, true);
+              player.playVideo();
+            }
+          } catch (_) {}
+        }, 400);
+      };
 
       const initPlayer = () => {
         new YT.Player(anchorId, {
@@ -70,9 +85,12 @@
               } catch (_) {}
             },
             onStateChange: (e) => {
-              // 1 = PLAYING → fade poster
-              if (e.data === 1) heroVid.classList.add('is-playing');
-              // 0 = ENDED → restart at startAt for a clean loop
+              // 1 = PLAYING → fade poster + start watching for end-cap
+              if (e.data === 1) {
+                heroVid.classList.add('is-playing');
+                startLoopWatcher(e.target);
+              }
+              // 0 = ENDED → restart at startAt (safety net if endAt isn't set)
               if (e.data === 0) {
                 try {
                   e.target.seekTo(startAt, true);
