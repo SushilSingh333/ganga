@@ -36,48 +36,70 @@
       document.body.classList.add('is-anim');
     }, reduceMotion ? 200 : 2700);
 
-    // Conditionally load YouTube iframe on desktop only — saves bandwidth on mobile,
-    // and only fade the poster image once YouTube confirms playback actually started.
+    // Hero video — load YouTube iframe on desktop only, via the official IFrame API.
+    // Poster stays on top (z-index:2) until YT confirms PLAYING; ENDED → seekTo(start) for loop.
     const heroVid = $('.hero-video[data-yt]');
     if (heroVid && window.innerWidth >= 900 && !reduceMotion) {
       const id = heroVid.dataset.yt;
-      const start = heroVid.dataset.start || '0';
-      const params = `autoplay=1&mute=1&loop=1&playlist=${id}&start=${start}&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1&disablekb=1&fs=0&cc_load_policy=0&enablejsapi=1`;
-      const iframe = document.createElement('iframe');
-      iframe.src = `https://www.youtube.com/embed/${id}?${params}`;
-      iframe.title = 'Ganga County · Estate Film';
-      iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
-      iframe.allowFullscreen = true;
-      iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-      iframe.tabIndex = -1;
-      iframe.setAttribute('aria-hidden', 'true');
+      const startAt = parseInt(heroVid.dataset.start || '0', 10);
 
-      // Listen for YouTube's state-change messages — only fade poster on actual PLAYING state (1)
-      const onMsg = (e) => {
-        if (typeof e.data !== 'string' || !e.data.includes('"event":"onStateChange"')) return;
-        try {
-          const data = JSON.parse(e.data);
-          if (data.event === 'onStateChange' && data.info === 1) {
-            heroVid.classList.add('is-playing');
-            window.removeEventListener('message', onMsg);
+      // Anchor element the API will replace with an iframe
+      const anchorId = 'hero-yt-anchor';
+      const anchor = document.createElement('div');
+      anchor.id = anchorId;
+      anchor.className = 'hero-yt-anchor';
+      heroVid.appendChild(anchor);
+
+      const initPlayer = () => {
+        new YT.Player(anchorId, {
+          videoId: id,
+          width: '100%',
+          height: '100%',
+          playerVars: {
+            autoplay: 1, mute: 1, controls: 0, rel: 0,
+            iv_load_policy: 3, modestbranding: 1, playsinline: 1,
+            disablekb: 1, fs: 0, cc_load_policy: 0,
+            start: startAt
+          },
+          events: {
+            onReady: (e) => {
+              try {
+                e.target.mute();
+                e.target.seekTo(startAt, true);
+                e.target.playVideo();
+              } catch (_) {}
+            },
+            onStateChange: (e) => {
+              // 1 = PLAYING → fade poster
+              if (e.data === 1) heroVid.classList.add('is-playing');
+              // 0 = ENDED → restart at startAt for a clean loop
+              if (e.data === 0) {
+                try {
+                  e.target.seekTo(startAt, true);
+                  e.target.playVideo();
+                } catch (_) {}
+              }
+            }
           }
-        } catch (_) {}
+        });
       };
-      window.addEventListener('message', onMsg);
 
-      iframe.addEventListener('load', () => {
-        // Subscribe to YouTube's onStateChange events via postMessage
-        try {
-          iframe.contentWindow.postMessage(JSON.stringify({
-            event: 'listening', id: 1, channel: 'widget'
-          }), '*');
-          iframe.contentWindow.postMessage(JSON.stringify({
-            event: 'command', func: 'addEventListener', args: ['onStateChange']
-          }), '*');
-        } catch (_) {}
-      });
+      // Safety net: if YT API somehow never confirms PLAYING, fade poster after 7s anyway
+      setTimeout(() => heroVid.classList.add('is-playing'), 7000);
 
-      heroVid.appendChild(iframe);
+      // Load YT IFrame API once, then init
+      if (window.YT && window.YT.Player) {
+        initPlayer();
+      } else {
+        const prev = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = () => { if (prev) prev(); initPlayer(); };
+        if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+          const s = document.createElement('script');
+          s.src = 'https://www.youtube.com/iframe_api';
+          s.async = true;
+          document.head.appendChild(s);
+        }
+      }
     }
   });
 
