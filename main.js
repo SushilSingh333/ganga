@@ -18,7 +18,7 @@
   const preloader = $('#preloader');
   const plPercent = $('#plPercent');
   if (plPercent && !reduceMotion) {
-    const plDur = 2400;
+    const plDur = 1300;
     const plStart = performance.now();
     const plTick = (now) => {
       const p = Math.min((now - plStart) / plDur, 1);
@@ -34,7 +34,7 @@
     setTimeout(() => {
       preloader.classList.add('is-out');
       document.body.classList.add('is-anim');
-    }, reduceMotion ? 200 : 2700);
+    }, reduceMotion ? 150 : 1500);
 
     // Hero video — load YouTube iframe on desktop only, via the official IFrame API.
     // Poster stays on top (z-index:2) until YT confirms PLAYING; loops within [start..end] window.
