@@ -36,12 +36,13 @@
       document.body.classList.add('is-anim');
     }, reduceMotion ? 200 : 2700);
 
-    // Conditionally load YouTube iframe on desktop only — saves significant bandwidth on mobile
+    // Conditionally load YouTube iframe on desktop only — saves bandwidth on mobile,
+    // and only fade the poster image once YouTube confirms playback actually started.
     const heroVid = $('.hero-video[data-yt]');
     if (heroVid && window.innerWidth >= 900 && !reduceMotion) {
       const id = heroVid.dataset.yt;
       const start = heroVid.dataset.start || '0';
-      const params = `autoplay=1&mute=1&loop=1&playlist=${id}&start=${start}&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1&disablekb=1&fs=0&cc_load_policy=0`;
+      const params = `autoplay=1&mute=1&loop=1&playlist=${id}&start=${start}&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1&disablekb=1&fs=0&cc_load_policy=0&enablejsapi=1`;
       const iframe = document.createElement('iframe');
       iframe.src = `https://www.youtube.com/embed/${id}?${params}`;
       iframe.title = 'Ganga County · Estate Film';
@@ -50,10 +51,32 @@
       iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
       iframe.tabIndex = -1;
       iframe.setAttribute('aria-hidden', 'true');
+
+      // Listen for YouTube's state-change messages — only fade poster on actual PLAYING state (1)
+      const onMsg = (e) => {
+        if (typeof e.data !== 'string' || !e.data.includes('"event":"onStateChange"')) return;
+        try {
+          const data = JSON.parse(e.data);
+          if (data.event === 'onStateChange' && data.info === 1) {
+            heroVid.classList.add('is-playing');
+            window.removeEventListener('message', onMsg);
+          }
+        } catch (_) {}
+      };
+      window.addEventListener('message', onMsg);
+
       iframe.addEventListener('load', () => {
-        // Keep the poster on top until autoplay has reliably kicked in
-        setTimeout(() => heroVid.classList.add('is-playing'), 2200);
+        // Subscribe to YouTube's onStateChange events via postMessage
+        try {
+          iframe.contentWindow.postMessage(JSON.stringify({
+            event: 'listening', id: 1, channel: 'widget'
+          }), '*');
+          iframe.contentWindow.postMessage(JSON.stringify({
+            event: 'command', func: 'addEventListener', args: ['onStateChange']
+          }), '*');
+        } catch (_) {}
       });
+
       heroVid.appendChild(iframe);
     }
   });
